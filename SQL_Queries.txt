@@ -1,0 +1,257 @@
+f) BETWEEN
+SELECT BookingID, TotalAmount
+FROM Booking
+WHERE TotalAmount BETWEEN 4000 AND 8000
+ORDER BY BookingID;
+
+BOOKINGID TOTALAMOUNT
+--------- -----------
+        1        5000
+        4        8000
+        5        7000
+        6        6000
+        7        4000
+        8        4500
+
+6 rows selected.
+What it does: This query fetches all bookings whose total rental amount falls in the range of the specified price, from 4,000 to 8,000. It helps in identifying mid-range bookings for financial or performance analysis.
+
+g) DISTINCT
+SELECT DISTINCT Method
+FROM Payment;
+
+METHOD
+--------------------
+Card
+Cash
+Online
+Bank Transfer
+
+What did it does : This query provides each payment method only once, removing duplicates. It demonstrates the different types of payment options customers have used in the system.
+ 
+h)  TO_CHAR
+SET LINESIZE 200;
+ COLUMN BookingID FORMAT 99999;
+ COLUMN BookingDate FORMAT A25;
+ COLUMN StartDate FORMAT 99999;
+ SELECT BookingID,
+          TO_CHAR(BookingDate,'DD-MON-YYYY') AS BookingDate,
+         TO_CHAR(StartDate,'Day DD-MON-YYYY') AS StartDate
+   FROM Booking
+   ORDER BY BookingID;
+
+BOOKINGID BOOKINGDATE               STARTDATE
+--------- ------------------------- --------------------------------
+        1 01-DEC-2025               Friday    05-DEC-2025
+        2 02-DEC-2025               Wednesday 10-DEC-2025
+        3 03-DEC-2025               Friday    12-DEC-2025
+        4 04-DEC-2025               Monday    15-DEC-2025
+        5 05-DEC-2025               Saturday  20-DEC-2025
+        6 06-DEC-2025               Monday    22-DEC-2025
+        7 07-DEC-2025               Thursday  25-DEC-2025
+        8 08-DEC-2025               Tuesday   30-DEC-2025
+
+8 rows selected.
+
+What did it does: This query uses TO_CHAR to format the booking dates as text. It displays each booking with a normal numeric date, and a more descriptive start date which includes the weekday.
+
+i) Aggregate function in SELECT list
+
+SELECT SUM(Amount) AS Total_Revenue_Completed
+FROM Payment
+WHERE Status = 'Completed';
+
+TOTAL_REVENUE_COMPLETED
+-----------------------
+                  43500
+What did it does : This query compute the total amount of cash the company has successfully gain by adding all payments marked as "Completed" ,helping measure total confirmed rental revenue.
+j)  GROUP BY
+
+SELECT Method, COUNT(*) AS NumPayments, SUM(Amount) AS TotalAmount
+FROM Payment
+GROUP BY Method
+ORDER BY Method;
+
+METHOD               NUMPAYMENTS TOTALAMOUNT
+-------------------- ----------- -----------
+Bank Transfer                  1        4000
+Card                           2       12000
+Cash                           3       27500
+Online                         2       18000
+
+What did it does  :This query group all the payments by their payment method, like Cash, Card, Online, and compute both the count of payments and the total money received against each type, which helps in analysing the payment trends.
+
+k)  SUBQUERY (and multi-table)
+SELECT c.CustomerID, c.FirstName || ' ' || c.LastName AS CustomerName
+FROM Customer c
+WHERE c.CustomerID IN (
+    SELECT b.CustomerID
+    FROM Booking b
+    JOIN Payment p ON b.BookingID = p.BookingID
+    GROUP BY b.CustomerID
+    HAVING SUM(p.Amount) > 8000)
+ORDER BY c.CustomerID;
+
+CUSTOMERID CUSTOMERNAME
+---------- --------------------------------------------------------
+      1002 Nimal Perera
+      1003 Kamal Senanayake
+ 
+What did it does: This query finds customers who have paid more than 8,000 in total for their bookings. The subquery calculates the total payment amount for each customer by adding all their payments together. Only customers whose total is greater than 8,000 are selected, and the main query shows their customer ID and full name.
+OUTER JOIN
+SET LINESIZE 200;
+ COLUMN CustomerID FORMAT 99999;
+ COLUMN CustomerName FORMAT A25;
+ COLUMN BookingID FORMAT 99999;
+ COLUMN TotalAmount FORMAT 99999999.99;
+ SELECT c.CustomerID, c.FirstName || ' ' || c.LastName AS CustomerName,
+          b.BookingID, b.TotalAmount
+    FROM Customer c
+   LEFT JOIN Booking b ON c.CustomerID = b.CustomerID
+  ORDER BY c.CustomerID, b.BookingID;
+
+CUSTOMERID CUSTOMERNAME              BOOKINGID  TOTALAMOUNT
+---------- ------------------------- --------- ------------
+      1001 Pawani Jayasooriya                1      5000.00
+      1002 Nimal Perera                      2     15000.00
+      1003 Kamal Senanayake                  3     12000.00
+      1004 Saman Fernando                    4      8000.00
+      1005 Anusha Jayasinghe                 5      7000.00
+      1006 Ruwan Silva                       6      6000.00
+      1007 Nadeesha Perera                   7      4000.00
+      1008 Tharindu Wijesinghe               8      4500.00
+
+8 rows selected. 
+What did it does: The LEFT OUTER JOIN returns all customers, including the ones who have no bookings. For customers with no matching booking, NULL values are shown; this will help in identifying clients who registered but never booked a party.
+SQL DML Commands l-n
+(l) DELETE — testing referential integrity (FK)
+(l1) DELETE that will FAIL (attempt to delete a customer referenced by Booking)
+DELETE FROM Customer WHERE CustomerID =1008;
+DELETE FROM Customer WHERE CustomerID =1008
+*
+ERROR at line 1:
+ORA-02292: integrity constraint (SYSTEM.FK_BOOKINGCUSTOMER) violated - child record found
+The above is the  error that given form the qury because we cannot delete CustomerID = 1008 because there are child Booking rows referencing this PK Oracle Stop the delete to Protect referential Continuity
+(l2) DELETE that will SUCCEED —frist remove children , then parent
+DELETE FROM BookingItem WHERE BookingID = 8;
+
+1 row deleted.
+
+DELETE FROM Payment WHERE BookingID = 8;
+
+1 row deleted.
+
+DELETE FROM BookingPerformer WHERE BookingID=8;
+
+1 row deleted.
+
+DELETE FROM Booking WHERE BookingID = 8;
+
+1 row deleted.
+
+DELETE FROM Customer WHERE CustomerID = 1008;
+
+1 row deleted.
+ 
+In here we succeeed because child rows that are adressing the parent are removed frist.lastly deleting the Customer will work ,why  there are no child Bookig remains:
+
+Explanation-To delete permently parent row when FK children last,either delete the children frist or use ON DELETE CASCADE when making the FK.But ON DELETE CASCADE must be explicitly declared, and it wasn't in your schema. Since your FKs don't have ON DELETE CASCADE, if children exist, deletes will fail.
+
+Row 1008 has now been successfully deleted from the Customer table, as shown below.
+
+SET LINESIZE 500;
+COLUMN CustomerID FORMAT 99999;
+COLUMN FristName FORMAT A25;
+COLUMN LastName FORMAT A25;
+COLUMN PhoneNo FORMAT 99999999.99;
+COLUMN Email  FORMAT A35;
+COLUMN Address  FORMAT A25;
+SELECT * FROM Customer;
+
+CUSTOMERID  FIRSTNAME       LASTNAME            PHONENO         EMAIL                             ADDRESS
+----------- -------------- -----------------    -------------   ------------------------------   ----------    
+      1001  Pawani          Jayasooriya         0771234567      pawanijayasooriyapma@gmail.com   Colombo
+      1002  Nimal           Perera              0712345678      nimalpererampa@gmail.com         Kandy
+      1003  Kamal           Senanayake          0723456789      kamalsenayakakmp@gmail.com       Galle
+      1004  Saman           Fernando            0756789123      samanfernandosf@gmail.com        Jaffna
+      1005  Anusha          Jayasinghe          0767891234      anushajayasinghaaj@gmail.com     Matara
+      1006  Ruwan           Silva               0789123456      ruwansilvars@gmail.com           Gampaha
+      1007  Nadeesha        Perera              0778912345      nadeeshapereranp@gmail.com       Negombo
+
+7 rows selected.
+
+
+(m) UPDATE — Testing FK constraints
+(m1) UPDATE that will FAIL (set Booking.CustomerID to a non-existent Customer)
+UPDATE Booking
+    SET CustomerID = 999
+    WHERE BookingID = 1;
+UPDATE Booking
+*
+ERROR at line 1:
+ORA-02291: integrity constraint (SYSTEM.FK_BOOKINGCUSTOMER) violated - parent key not found
+Explanation : Oracle wont let us to set a FK value to a CustomerID that not in the parent table.This carry out  referential integrity.(no dumed child rows.) 
+(m2) UPDATE that will SUCCEED (legal update that doesn't break FK)
+UPDATE Booking
+    SET Status = 'Confirmed'
+    WHERE Status = 'Pending';
+3 rows updated.
+This updates Status values from 'Pending'to 'Confirmed' it doesnt touch FK values,so it work.Disply number of rows updated.
+Explanation:It is allowed to update non-FK columns or set FK columns to existing parent values; only setting FK to absent parent or removing of parent with existing children is blocked.
+Booking Table before update
+BOOKINGID  BOOKINGDATE   STARTDATE   ENDDATE     TOTALAMOUNT   STATUS        CUSTOMERID  PACKAGEID   
+---------- ------------  ----------  ---------   -----------   ------------  ----------  ----------  
+       1   01-DEC-25     05-DEC-25   05-DEC-25        5000     Confirmed      1001               1            
+       2   02-DEC-25     10-DEC-25   10-DEC-25       15000     Pending        1002               2            
+       3   03-DEC-25     12-DEC-25   12-DEC-25       12000     Confirmed      1003               3            
+       4   04-DEC-25     15-DEC-25   15-DEC-25        8000     Pending        1004               4            
+       5   05-DEC-25     20-DEC-25   20-DEC-25        7000     Confirmed      1005               5            
+       6   06-DEC-25     22-DEC-25   22-DEC-25        6000     Pending        1006               6            
+       7   07-DEC-25     25-DEC-25   25-DEC-25        4000     Confirmed      1007               7            
+
+7 rows selected.
+
+
+There is only row seven here, since CustomerID =1008 was deleted above, the row BookingID =8 has also been deleted here.
+
+
+Booking Table after update
+
+BOOKINGID BOOKINGDATE     STARTDATE       ENDDATE      TOTALAMOUNT STATUS           CUSTOMERID  PACKAGEID 
+--------- --------------- --------------- ------------ ----------- --------------   ----------- --------- 
+        1 01-DEC-25       05-DEC-25       05-DEC-25           5000 Confirmed               1001         1           
+        2 02-DEC-25       10-DEC-25       10-DEC-25          15000 Confirmed               1002         2           
+        3 03-DEC-25       12-DEC-25       12-DEC-25          12000 Confirmed               1003         3           
+        4 04-DEC-25       15-DEC-25       15-DEC-25           8000 Confirmed               1004         4           
+        5 05-DEC-25       20-DEC-25       20-DEC-25           7000 Confirmed               1005         5           
+        6 06-DEC-25       22-DEC-25       22-DEC-25           6000 Confirmed               1006         6           
+        7 07-DEC-25       25-DEC-25       25-DEC-25           4000 Confirmed               1007         7           
+
+7 rows selected.
+
+
+The previous status has now been Confirmed in all three Pending lines.
+ 
+
+(n) INSERT — testing primary key (entity integrity)
+
+(n1) INSERT that will FAIL (duplicate primary key)
+
+Assume that CustomerID = 1001 already exists.
+
+INSERT INTO Customer VALUES (1001,'Pawan','Jayasooriya','0771234567','pawanjayasooriyapma@gmail.com','Colombo');
+ INSERT INTO Customer VALUES (1001,'Pawan','Jayasooriya','0771234567','pawanjayasooriyapma@gmail.com','Colombo')
+*
+ERROR at line 1:
+ORA-00001: unique constraint (SYSTEM.PK_CUSTOMER) violated
+
+Explanation-Primary Key must be Special and not null.Trying to insert duplicate CustomerID violates the Special constraint.
+
+(n2) INSERT that will SUCCEED (new unique primary key)
+
+INSERT INTO Customer VALUES (1009, 'Kavindu', 'Perera', '0719999999', 'kavindu@gmail.com', 'Colombo');
+
+1 row created.
+
+Explanation-Inserting a new PK value that doesn't exist satisfies entity integrity.
+

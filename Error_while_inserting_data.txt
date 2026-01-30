@@ -1,0 +1,38 @@
+Error while inserting data.
+
+When inserting data into any table, “1 row created” appears only when the data is inserted in the correct format. If the format is not followed when inserting data, an error message is displayed. 
+Ex: 01.
+INSERT INTO Customer VALUES (1009,'pawani','Jayasooriya','0771234567','pawanijayasooriyapma@gmail.com','Colombo');
+ INSERT INTO Customer VALUES (1009,'pawani','Jayasooriya','0771234567','pawanijayasooriyapma@gmail.com','Colombo')
+*
+ERROR at line 1:
+ORA-02290: check constraint (SYSTEM.CHK_FNAME) violated
+
+Error explain:
+
+When inserting data into the Customer table in this way, an error appears. Because the constraint name is used, the error message can be easily identified.( check constraint (SYSTEM.CHK_FNAME). The error here is that the first name should start with a capital letter.(uppercase) , as mentioned earlier. But here, it is written in simple letters(lowercase) as “pawani”.
+
+Similary, if try to insert data in a different way, into a different table, or into a different column, instead of the given method, this type of error will occur.
+
+Ex: 02.
+
+INSERT INTO Customer VALUES (1001,'Madawa','Jayasooriya','0771934567','madawajayasooriyapma@gmail.com','Colombo');
+ INSERT INTO Customer VALUES (1001,'Madawa','Jayasooriya','0771934567','madawajayasooriyapma@gmail.com','Colombo')
+*
+ERROR at line 1:
+ORA-00001: unique constraint (SYSTEM.PK_CUSTOMER) violated
+
+Error Explain:
+The primary key of a table is unique. There can be no duplicate data in that column. CustomerID 1001 has already been given. There cannot be another person with CustomerID 1001, which is why this error occurred.
+Ex : 03.
+INSERT INTO Booking VALUES (9,TO_DATE('2025-12-01','YYYY-MM-DD'),TO_DATE('2025-12-05','YYYY-MM-DD'),TO_DATE('2025-12-05','YYYY-MM-DD'),5000,'Confirmed',1009,1);
+INSERT INTO Booking VALUES (9,TO_DATE('2025-12-01','YYYY-MM-DD'),TO_DATE('2025-12-05','YYYY-MM-DD'),TO_DATE('2025-12-05','YYYY-MM-DD'),5000,'Confirmed',1009,1)
+*
+ERROR at line 1:
+ORA-02291: integrity constraint (SYSTEM.FK_BOOKINGCUSTOMER) violated - parent
+key not found
+
+Error Explain:
+Here, there are foreign key relationships. So can’t make a reservation for someone who isn’t in the Customer table. Also, only an existing Customer can make a booking, only an available package can be booked and Ensures that can only assign an existing Performer. If this is not the case , the error above will occur and data cannot be inserted.
+All of the above is valid for all tables. More details and rules regarding this are explained when creating the relevant table and column.
+ 
